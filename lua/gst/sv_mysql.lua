@@ -28,6 +28,20 @@ local m = GST.MySQL -- Because I don't want to type "GST.MySQL" over and over.
 local db = mysqloo.connect(hostname, username, password, database, port)
 db:setAutoReconnect(true)
 
+--[[ Local Helper Functions ]]--
+
+-- Helper function for GST.MySQL.UpdateAll. Makes sure nullable values are passed as "NULL" if there is no value set.
+local function _valueOrNull(val)
+	if val then return val else return "NULL" end
+end
+
+-- Helper function for callbacks on queries that require no processing
+local function _emptyQueryCallback(q, data)
+	GST.Log("Query \"" .. q .. "\" completed successfully.")
+end
+
+--[[ GST.MySQL Functionality ]]--
+
 function db:onConnected()
 	GST.Info("Connected successfully to the MySQL database! Creating tables...")
 	local Q1 = db:query([[CREATE TABLE IF NOT EXISTS 
@@ -35,9 +49,9 @@ function db:onConnected()
 							steamid VARCHAR(17) NOT NULL PRIMARY KEY, 
 							kills INTEGER NOT NULL,
 							deaths INTEGER NOT NULL,
-							time INTEGER NOT NULL
-						);]]) -- TODO add more columns for more data
-	-- TODO add weapons column
+							time INTEGER DEFAULT NULL
+						);]]) -- TODO update table with new data
+	-- TODO add weapons column?
 end
 
 function db:onConnectionFailed(err)
@@ -66,15 +80,34 @@ end)
 function m.UpdateAll(from_local)
 	local players = player.GetAll()
 
-	if from_local then
+	if from_local then -- Update all connected players from the local database.
 		for _, ply in ipairs(players) do
 			if ply:IsBot() continue end
+			-- Data to be entered
 			local sid = ply:SteamID()
+			local kills = ply:GetKills()
+			local deaths = ply:GetDeaths()
+			local time
+
+			if ply.GetUTimeTotalTime then
+				time = ply:GetUTimeTotalTime()
+			end
 
 			local playerData = sql.QueryRow("SELECT * FROM gst_master WHERE steamid = " .. sid .. ";")
 			local weaponData = sql.QueryRow("SELECT * FROM gst_weapon WHERE steamid = " .. sid .. ";")
 			
-			local Q1 = db:query(string.format("UPDATE gst_master SET kills = %i")
+			local Q1 = db:query(string.format("UPDATE gst_master SET kills = %d, deaths = %d, time = %d WHERE steamid = %d", kills, deaths, _valueOrNull(time), sid))
+
+			function Q1:onError(err, sql)
+				GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+			end
+
+			Q1.onSuccess = _emptyQueryCallback
+			_internalData[sid] = {kills, deaths, time}
+		end
+	else -- This assumes we are only updating connected players using their current data
+		for _, ply in ipairs(players) do
+			
 		end
 	end
 end
