@@ -19,7 +19,6 @@
 		Float - SQL Float
 
 ]]--
-
 GST.DataType = {
 	Int = "INTEGER",
 	String = "VARCHAR",
@@ -84,7 +83,6 @@ GST.Module.Enabled = true
 
 		Must be registered with <Module:Register>
 ]]--
-
 function GST.Module:New(name)
 	newModule = {Name = name}
 	self.__index = self
@@ -96,7 +94,6 @@ end
 
 	Registers a module table to be used.
 ]]--
-
 function GST.Module:Register()
 	local name = self.Name
 	if modules[name] then
@@ -122,7 +119,6 @@ end
 
 	Adds a data value specific to the module
 ]]--
-
 function GST.Module:DataValue(name,type,val,desc,displayname)
 	_registerDataValue(name,self.Name,type,val,desc,displayname)
 end
@@ -140,7 +136,6 @@ end
 
 	Adds a data value, not specific to any addon
 ]]--
-
 function GST.MiscDataValue(name,type,val,desc,displayname)
 	_registerDataValue(name,"Misc",type,val,desc,displayname)
 end
