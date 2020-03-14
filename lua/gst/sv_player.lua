@@ -16,6 +16,28 @@ end
 -- Group: Setters
 
 --[[
+	Function: Player:SetData
+
+	Sets specific data of a player to a specific value
+
+	Parameters:
+
+		key - The name of the data value to set
+		val - The value to set it to
+
+	Note:
+
+		You will have to implement handling the value yourself
+
+	See Also:
+
+		<Player:GetData>
+]]--
+function Player:SetData(key,val)
+	GST.DataProvider.SetData(self, key, val)
+end
+
+--[[
 	Function: Player:SetKills
 
 	Sets the kills of a player to a value greater than 0.
@@ -47,6 +69,7 @@ local oldSetDeaths = Player.SetDeaths
 	Parameters:
 
 		deaths - The number of deaths to give the player. 
+		override - If GST Deaths should be set, in case other addons want to use the default function.
 
 	Note:
 
@@ -56,8 +79,9 @@ local oldSetDeaths = Player.SetDeaths
 
 		<Player:GetDeaths>
 ]]--
-function Player:SetDeaths(deaths)
+function Player:SetDeaths(deaths,override)
 	oldSetDeaths(deaths)
+	if not override return end
 	assert(deaths > 0, "Cannot set player to negative deaths!")
 	GST.DataProvider.SetDeaths(self, deaths)
 end
@@ -84,6 +108,27 @@ function Player:SetTotalTime(time)
 end
 
 -- Group: Getters
+
+--[[
+	Function: Player:GetData
+
+	Gets specific data of a player
+
+	Parameters:
+
+		key - The name of the data value to get
+
+	Returns:
+
+		The value of the data val.
+
+	See Also:
+
+		<Player:SetData>
+]]--
+function Player:GetData(key)
+	return GST.DataProvider.GetData(self)[key]
+end
 
 --[[
 	Function: Player:GetKills
