@@ -1,5 +1,5 @@
 --[[
-	This is the init file for Gmod Stat Tracker, or GST. This 
+	This is the init file for Gmod Stat Tracker, or GST.
 ]]--
 GST = {} -- Global table
 

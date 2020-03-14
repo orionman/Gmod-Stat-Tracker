@@ -1,5 +1,5 @@
 --[[
-	MySQL
+	File: sv_mysql.lua
 
 	MySQL is a database software used for synchronizing information between servers. Gmod MySQL uses FredyH's MySQLOO (https://github.com/FredyH/MySQLOO)
 	in order to function. If this is not present in your server, MySQL will NOT work.
@@ -17,7 +17,16 @@ local port 		= 3306 -- This is probably 3306. Don't change it unless you know it
 	DON'T EDIT ANYTHING PAST THIS POINT
 -----------------------------------]]--
 
-require("mysqloo") -- Required for MySQLOO to be loaded
+local OS = jit.os
+
+-- Check if we have MySQLOO installed first. If we don't, break out of stack.
+if (OS == "Linux" and not file.Exists("bin/gsmv_mysqloo_linux*.dll", "LUA")) or (OS == "Windows" and not file.Exists("bin/gsmv_mysqloo_win*.dll", "LUA")) then
+	GST.Warn("MySQLOO not found. Reverting to SQLite...")
+	GST.DataProvider = GST.SQLite
+	return -- Exit this file
+end
+
+require("mysqloo") -- Required for MySQLOO to be loaded. Will throw an error if not present
 
 GST.MySQL = {} -- Global table for GST-related MySQL functions.
 GST.DataProvider = GST.MySQL -- Cleaner access
@@ -36,26 +45,70 @@ local function _valueOrNull(val)
 end
 
 -- Helper function for callbacks on queries that require no processing
-local function _emptyQueryCallback(q, data)
+local function _defaultCallback(q, data)
 	GST.Log("Query \"" .. q .. "\" completed successfully.")
 end
 
 --[[ GST.MySQL Functionality ]]--
 
+local allWeapons = nil
 function db:onConnected()
-	GST.Info("Connected successfully to the MySQL database! Creating tables...")
+	GST.Info("Connected to the MySQL database! Creating tables...")
+	GST.Info("Creating master table...")
 	local Q1 = db:query([[CREATE TABLE IF NOT EXISTS 
 						gst_master (
 							steamid VARCHAR(17) NOT NULL PRIMARY KEY, 
 							kills INTEGER NOT NULL,
 							deaths INTEGER NOT NULL,
 							time INTEGER DEFAULT NULL
-						);]]) -- TODO update table with new data
-	-- TODO add weapons column?
+						);]])
+	
+	function Q1:onSuccess(data)
+		GST.Info("Master table created successfully!")
+	end
+
+	function Q1:onError(err, sql)
+		GST.Error("Failed in creating master database: " .. err .. " (" .. sql .. ")")
+	end
+
+	Q1:start()
+
+	while Q1:isRunning() end -- lock until query done to add weapons tables.
+
+	GST.Info("Checking weapon tables...")
+	if not allWeapons then
+		GST.Info("Creating weapon tables...")
+		local tbl = {}
+		local weps = weapons.GetList()
+
+		for _, wep in ipairs(weps) do
+			if wep then
+				if WEPS and WEPS.IsEquipment(wep) then continue end
+				table.insert(tbl, wep)
+				local name = wep.ClassName
+				local Q2 = db:query(
+					string.format([[CREATE TABLE IF NOT EXISTS
+									gst_%s (
+										steamid VARCHAR(17) NOT NULL PRIMARY KEY,
+										kills INTEGER DEFAULT NULL
+									);]], name))
+
+				function Q2:onError(err, sql)
+					GST.Error("Could not create weapon table for weapon: \"" .. name .. "\". Error: " .. err)
+				end
+
+				Q2.onSuccess = _defaultCallback
+
+				Q2:start()
+			end
+		end
+		allWeapons = tbl -- cache it so if DB disconnects during the round and reconnects we don't have to run this all again.
+	end
+	GST.Info("Weapon tables verified successfully!")
 end
 
 function db:onConnectionFailed(err)
-	GST.Error("Failed to connect to the MySQL database. Reverting to SQLite...")
+	GST.Error("Failed to connect to the MySQL database (" .. err .. "). Reverting to SQLite...")
 	GST.DataProvider = GST.SQLite
 	GST.DataProvider.UpdateAll()
 end
@@ -63,7 +116,7 @@ end
 db:connect()
 timer.Create("GST_PingDatabase_" .. tostring(math.random(-2000000000, 2000000001)), 67, 0, function() -- Timer name is sanity check. Makes sure people can't interrupt database pinging.
 	GST.Info("Pinging database...")
-	local connected = db:ping()
+	local connected = db:ping() -- This can be dangerous because server will hang for at least 2x ping to database if it's down. Should be less than a fraction of a second, though, if ping isn't bad.
 
 	if not connected then
 		GST.Error("Connection to database lost. Will attempt to reconnect every 60 seconds... Reverting to SQLite until connection restored.")
@@ -102,7 +155,7 @@ function m.UpdateAll(from_local)
 				GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
 			end
 
-			Q1.onSuccess = _emptyQueryCallback
+			Q1.onSuccess = _defaultCallback
 			_internalData[sid] = {kills, deaths, time}
 		end
 	else -- This assumes we are only updating connected players using their current data
