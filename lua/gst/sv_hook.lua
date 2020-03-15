@@ -25,10 +25,32 @@ function GST.PlayerDeath(victim, weapon, attacker)
 	if victim == attacker or not IsValid(attacker) then return end -- no further processing is required if suicide.
 
 	local headshot = _wasHeadshot(victim)
-	local attackerData = {} -- stores the attacker's data to update
-	local victimData = {} -- stores the victim's data to update
 
 	if IsValid(weapon) and weapon:IsWeapon() then
-		attackerData.Weapon = weapon.ClassName
+		local class = weapon.ClassName
+		victim:SetWeaponData(class,"deaths",victim:GetWeaponData(class,"deaths")+1)
+		if attacker:IsPlayer() then attacker:SetWeaponData(class,"kills",attacker:GetWeaponData(class,"kills")+1) end
+	end
+
+	if attacker:IsPlayer() then
+		attacker:AddKill()
+		attacker:SetData("headshots",attacker:GetData("headshots")+1)
 	end
 end
+
+--[[
+	Function: DataValueChanged
+
+	Called when a GST Data Value is Changed
+
+	Note:
+		
+		*DO NOT CALL THIS MANUALLY, ONLY THROUGH `hook.Call`*
+]]--
+function GST.DataValueChanged(data)
+	local datamodule = GST.GetModule(data.Module)
+	if not datamodule.Enabled or not gmod.GetGamemode().Name == datamodule.Gamemode then return false end
+end
+
+hook.Add("PlayerDeath","GST_PlayerDeath",GST.PlayerDeath)
+hook.Add("GST_DataValueChanged","GST_DataValueChangeValid",GST.PostLoad)
