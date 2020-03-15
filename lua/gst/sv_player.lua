@@ -18,23 +18,50 @@ end
 --[[
 	Function: Player:SetData
 
-	Sets specific data of a player to a specific value
+	Sets specific data of a player to a specific value.
 
 	Parameters:
 
-		key - The name of the data value to set
-		val - The value to set it to
+		key - The name of the data value to set.
+		val - The value to set it to.
 
 	Note:
 
-		You will have to implement handling the value yourself
+		You will have to implement handling the value yourself.
 
 	See Also:
 
 		<Player:GetData>
 ]]--
 function Player:SetData(key,val)
+	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key)) or true
+	if not shouldchange then return end
 	GST.DataProvider.SetData(self, key, val)
+end
+
+--[[
+	Function: Player:SetWeaponData
+
+	Gets specific weapon data of a player
+
+	Parameters:
+
+		weapon - The class of the weapon to get.
+		key - The name of the data value to get.
+		val - The value to set it to.
+
+	Returns:
+
+		The value of the weapons data val.
+
+	See Also:
+
+		<Player:GetWeaponData>
+]]--
+function Player:SetWeaponData(weapon,key,val)
+	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key,weapon)) or true
+	if not shouldchange then return end
+	GST.DataProvider.SetWeaponData(self,weapon,key,val)
 end
 
 --[[
@@ -56,7 +83,7 @@ end
 ]]--
 function Player:SetKills(kills)
 	assert(kills > 0, "Cannot set player to negative kills!")
-	GST.DataProvider.SetKills(self, kills)
+	self:SetData("kills", kills)
 end
 
 local oldSetDeaths = Player.SetDeaths
@@ -80,10 +107,12 @@ local oldSetDeaths = Player.SetDeaths
 		<Player:GetDeaths>
 ]]--
 function Player:SetDeaths(deaths,override)
+	if override then  
+		assert(deaths > 0, "Cannot set player to negative deaths!")
+		self:SetData("deaths", deaths)
+		return 
+	end
 	oldSetDeaths(deaths)
-	if not override return end
-	assert(deaths > 0, "Cannot set player to negative deaths!")
-	GST.DataProvider.SetDeaths(self, deaths)
 end
 
 --[[
@@ -101,10 +130,10 @@ end
 
 		<Player:GetSessionTime>
 ]]--
-function Player:SetTotalTime(time)
+function Player:SetTime(time)
 	assert(time > 0, "Cannot set negative time!")
 	assert(time < math.pow(2, 31) - 1, "Cannot set time above 2,147,483,647 seconds!")
-	GST.DataProvider.SetTotalTime(self, time)
+	self:SetData("time", time)
 end
 
 -- Group: Getters
@@ -112,11 +141,11 @@ end
 --[[
 	Function: Player:GetData
 
-	Gets specific data of a player
+	Gets specific data of a player.
 
 	Parameters:
 
-		key - The name of the data value to get
+		key - The name of the data value to get.
 
 	Returns:
 
@@ -128,6 +157,28 @@ end
 ]]--
 function Player:GetData(key)
 	return GST.DataProvider.GetData(self)[key]
+end
+
+--[[
+	Function: Player:GetWeaponData
+
+	Gets specific weapon data of a player
+
+	Parameters:
+
+		weapon - The class of the weapon to get
+		key - The name of the data value to get
+
+	Returns:
+
+		The value of the weapons data val.
+
+	See Also:
+
+		<Player:SetWeaponData>
+]]--
+function Player:GetWeaponData(weapon,key)
+	return GST.DataProvider.GetWeaponData(self,weapon)[key]
 end
 
 --[[
@@ -144,7 +195,7 @@ end
 		<Player:SetKills>
 ]]--
 function Player:GetKills()
-	return GST.DataProvider.GetData(self).kills
+	return self:GetData("kills")
 end
 
 --[[
@@ -161,7 +212,7 @@ end
 		<Player:SetDeaths>
 ]]--
 function Player:GetDeaths()
-	return GST.DataProvider.GetData(self).deaths
+	return self:GetData("deaths")
 end
 
 --[[
@@ -178,7 +229,7 @@ end
 		<Player:GetSessionTime>
 ]]--
 function Player:GetTime()
-	return GST.DataProvider.GetData(self).overallTime
+	return self:GetData("time")
 end
 
 --[[
@@ -187,7 +238,7 @@ end
 	Alias of <Player:GetTime>
 ]]--
 function Player:GetTotalTime()
-	return self:GetTime()
+	return self:GetData("time")
 end
 
 --[[
@@ -202,11 +253,11 @@ end
 		<Player:GetTime>
 ]]--
 function Player:GetSessionTime()
-	return GST.DataProvider.GetData(self).sessionTime
+	return self:GetData("session_time")
 end
 
 function Player:AddDeath()
-	self:SetDeaths(self:GetDeaths() + 1)
+	self:SetDeaths(self:GetDeaths() + 1,true)
 end
 
 function Player:AddKill()

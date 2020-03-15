@@ -59,6 +59,7 @@ function db:onConnected()
 						gst_master (
 							steamid VARCHAR(17) NOT NULL PRIMARY KEY, 
 							kills INTEGER NOT NULL,
+							headshots INTEGER NOT NULL,
 							deaths INTEGER NOT NULL,
 							time INTEGER DEFAULT NULL
 						);]])
@@ -91,6 +92,7 @@ function db:onConnected()
 									gst_%s (
 										steamid VARCHAR(17) NOT NULL PRIMARY KEY,
 										kills INTEGER DEFAULT NULL
+										deaths INTEGER DEFAULT NULL
 									);]], name))
 
 				function Q2:onError(err, sql)
