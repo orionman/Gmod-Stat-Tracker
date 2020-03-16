@@ -49,7 +49,7 @@ end
 ]]--
 function GST.DataValueChanged(data)
 	local datamodule = GST.GetModule(data.Module)
-	if not datamodule.Enabled or not gmod.GetGamemode().Name == datamodule.Gamemode then return false end
+	if not datamodule.Enabled or not gmod.GetGamemode().Name == datamodule.Gamemode and not datamodule.Gamemode == "" then return false end
 end
 
 hook.Add("PlayerDeath","GST_PlayerDeath",GST.PlayerDeath)

@@ -21,7 +21,6 @@
 ]]--
 GST.DataType = {
 	Int = "INTEGER",
-	String = "VARCHAR",
 	Float = "FLOAT"
 }
 
@@ -34,7 +33,7 @@ local weapondatavalues = {}
 
 -- Registers data value into the database
 local function _registerDataValue(key,module,type,desc,displayname)
-	local type = type or GST.DataType.String
+	local type = type or GST.DataType.Int
 	local desc = desc or "No Description Set"
 	local displayname = displayname or key
 	local Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
@@ -54,12 +53,12 @@ local function _registerDataValue(key,module,type,desc,displayname)
 	function Q:onError(err, sql)
 		GST.Error("Failed in adding value "..key.." : " .. err .. " (" .. sql .. ")")
 	end
-	datavalues[key] = {Module=module,Desc=desc,Displayname=displayname}
+	datavalues[key] = {Module=module,Desc=desc,Displayname=displayname,Type=type}
 end
 
 -- Registers data value into every weapon table
 local function _registerWeaponDataValue(key,module,type,desc,displayname)
-	local type = type or GST.DataType.String
+	local type = type or GST.DataType.Int
 	local desc = desc or "No Description Set"
 	local displayname = displayname or key
 
@@ -85,7 +84,7 @@ local function _registerWeaponDataValue(key,module,type,desc,displayname)
 			GST.Error("Failed in adding weapon value "..key.." : " .. err .. " (" .. sql .. ")")
 		end
 	end
-	weapondatavalues[key] = {Module=module,Desc=desc,Displayname=displayname}
+	weapondatavalues[key] = {Module=module,Desc=desc,Displayname=displayname,Type=type}
 end
 
 -- Group: Module

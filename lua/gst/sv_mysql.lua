@@ -86,7 +86,7 @@ function db:onConnected()
 			if wep then
 				if WEPS and WEPS.IsEquipment(wep) then continue end
 				table.insert(tbl, wep)
-				local name = wep.ClassName
+				local name = wep:GetClass()
 				local Q2 = db:query(
 					string.format([[CREATE TABLE IF NOT EXISTS
 									gst_%s (
@@ -151,7 +151,7 @@ function m.UpdateAll(from_local)
 			local playerData = sql.QueryRow("SELECT * FROM gst_master WHERE steamid = " .. sid .. ";")
 			local weaponData = sql.QueryRow("SELECT * FROM gst_weapon WHERE steamid = " .. sid .. ";")
 			
-			local Q1 = db:query(string.format("UPDATE gst_master SET kills = %d, deaths = %d, time = %d WHERE steamid = %d", kills, deaths, _valueOrNull(time), sid))
+			local Q1 = db:query(string.format("UPDATE gst_master SET kills = %d, deaths = %d, time = %d WHERE steamid = %s", kills, deaths, _valueOrNull(time), sid))
 
 			function Q1:onError(err, sql)
 				GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
@@ -165,4 +165,114 @@ function m.UpdateAll(from_local)
 			
 		end
 	end
+end
+
+-- Group: Data
+
+--[[
+	Function: MySQL.SetData
+
+	Parameters:
+		
+		ply - Player to set the data of.
+		key - Data to change.
+		val - Value to change it to.
+
+	Changes a players data value.
+]]--
+function m.SetData(ply,key,val)
+	if not ply:IsPlayer() then
+		GST.Error("Tried to set data on a non-player!")
+		return
+	end
+	local sid = ply:SteamID()
+	local Q = db:query(string.format("UPDATE gst_master SET %s = ".. tostring(val) .." WHERE steamid = %s", key, sid))
+
+	function Q:onError(err,sql)
+		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+	end
+
+	Q.onSuccess = _defaultCallback
+end
+
+--[[
+	Function: MySQL.GetData
+
+	Parameters:
+		
+		ply - Player to get the data of.
+
+	Returns:
+
+		A table containing a players data.
+
+]]--
+function m.GetData(ply)
+	if not ply:IsPlayer() then
+		GST.Error("Tried to get data from a non-player!")
+		return
+	end
+	local sid = ply:SteamID()
+	return sql.QueryRow("SELECT * FROM gst_master WHERE steamid = " .. sid .. ";")
+end
+
+--[[
+	Function: MySQL.SetWeaponData
+
+	Parameters:
+		
+		ply - Player to set the data of.
+		weapon - Weapon to set the data of.
+		key - Data to change.
+		val - Value to change it to.
+
+	Changes a players weapon data value.
+]]--
+function m.SetWeaponData(ply,weapon,key,val)
+	if not ply:IsPlayer() then
+		GST.Error("Tried to set data on a non-player!")
+		return
+	end
+	if not weapon:IsWeapon() then
+		GST.Error("Tried to get weapon data from a non-weapon!")
+		return
+	end
+
+	local sid = ply:SteamID()
+	local type = GST.GetDataValue(key).Type
+	local Q = db:query(string.format("UPDATE gst_%s SET %s = ".. tostring(val) .." WHERE steamid = %s", weapon:GetClass(), key, sid))
+
+	function Q:onError(err,sql)
+		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+	end
+
+	Q.onSuccess = _defaultCallback
+end
+
+
+--[[
+	Function: MySQL.SetWeaponData
+
+	Parameters:
+		
+		ply - Player to get the data of.
+		weapon - Weapon to get the data of.
+
+	Returns:
+
+		A players weapon data.
+
+]]--
+function m.GetWeaponData(ply,weapon)
+	if not ply:IsPlayer() then
+		GST.Error("Tried to get data from a non-player!")
+		return
+	end
+	if not weapon:IsWeapon() then
+		GST.Error("Tried to get weapon data from a non-weapon!")
+		return
+	end
+
+	local sid = ply:SteamID()
+	return sql.QueryRow("SELECT * FROM gst_".. weapon:GetClass() .." WHERE steamid = " .. sid .. ";")
 end

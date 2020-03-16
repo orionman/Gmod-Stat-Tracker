@@ -34,7 +34,7 @@ end
 		<Player:GetData>
 ]]--
 function Player:SetData(key,val)
-	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key)) or true
+	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key))
 	if not shouldchange then return end
 	GST.DataProvider.SetData(self, key, val)
 end
@@ -59,7 +59,7 @@ end
 		<Player:GetWeaponData>
 ]]--
 function Player:SetWeaponData(weapon,key,val)
-	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key,weapon)) or true
+	local shouldchange = hook.Call("GST_DataValueChanged",nil,GST.GetDataValue(key,weapon))
 	if not shouldchange then return end
 	GST.DataProvider.SetWeaponData(self,weapon,key,val)
 end
