@@ -7,7 +7,7 @@
 
 ]]--
 
---[[ Enums ]]--
+-- Group: Enums
 
 --[[
 	Enum: DataType
@@ -20,11 +20,11 @@
 
 ]]--
 GST.DataType = {
-	Int = "INTEGER",
-	Float = "FLOAT"
+    Int = "INTEGER",
+    Float = "FLOAT"
 }
 
---[[ Local Helper Functions and Tables]]--
+--[[ Local Helper Functions and Tables ]]--
 
 -- List of all Modules and Data Values, we only need these here
 local modules = {}
@@ -32,11 +32,11 @@ local datavalues = {}
 local weapondatavalues = {}
 
 -- Registers data value into the database
-local function _registerDataValue(key,module,type,desc,displayname)
-	local type = type or GST.DataType.Int
-	local desc = desc or "No Description Set"
-	local displayname = displayname or key
-	local Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
+local function _registerDataValue(key, module, type, desc, displayname)
+    type = type or GST.DataType.Int
+    desc = desc or "No Description Set"
+    displayname = displayname or key
+    local Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
 										SELECT
 											*
 										FROM
@@ -45,28 +45,34 @@ local function _registerDataValue(key,module,type,desc,displayname)
 											COLUMN_NAME = '%s')
 										ALTER TABLE gst_master
 											ADD %s %s NULL
-										END;]],key,key,type,val))
+										END;]], key, key, type, val))
 
-	function Q:onSuccess(data)
-		GST.Info("Value "..key.." added successfully!")
-	end
-	function Q:onError(err, sql)
-		GST.Error("Failed in adding value "..key.." : " .. err .. " (" .. sql .. ")")
-	end
-	datavalues[key] = {Module=module,Desc=desc,Displayname=displayname,Type=type}
+    function Q:onSuccess(data)
+        GST.Info("Value " .. key .. " added successfully!")
+    end
+
+    function Q:onError(err, sql)
+        GST.Error("Failed in adding value " .. key .. " : " .. err .. " (" .. sql .. ")")
+    end
+
+    datavalues[key] = {
+        Module = module,
+        Desc = desc,
+        Displayname = displayname,
+        Type = type
+    }
 end
 
 -- Registers data value into every weapon table
-local function _registerWeaponDataValue(key,module,type,desc,displayname)
-	local type = type or GST.DataType.Int
-	local desc = desc or "No Description Set"
-	local displayname = displayname or key
+local function _registerWeaponDataValue(key, module, type, desc, displayname)
+    type = type or GST.DataType.Int
+    desc = desc or "No Description Set"
+    displayname = displayname or key
+    weps = weapons.GetList()
+    local Q
 
-	local weps = weapons.GetList()
-	local Q
-
-	for _, wep in ipairs(weps) do
-		Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
+    for _, wep in ipairs(weps) do
+        Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
 											SELECT
 												*
 											FROM
@@ -75,20 +81,26 @@ local function _registerWeaponDataValue(key,module,type,desc,displayname)
 												COLUMN_NAME = '%s')
 											ALTER TABLE gst_%s
 												ADD %s %s NULL
-											END;]],wep,key,wep,key,type,val))
+											END;]], wep, key, wep, key, type, val))
 
-		function Q:onSuccess(data)
-			GST.Info("Weapon value "..key.." added successfully!")
-		end
-		function Q:onError(err, sql)
-			GST.Error("Failed in adding weapon value "..key.." : " .. err .. " (" .. sql .. ")")
-		end
-	end
-	weapondatavalues[key] = {Module=module,Desc=desc,Displayname=displayname,Type=type}
+        function Q:onSuccess(data)
+            GST.Info("Weapon value " .. key .. " added successfully!")
+        end
+
+        function Q:onError(err, sql)
+            GST.Error("Failed in adding weapon value " .. key .. " : " .. err .. " (" .. sql .. ")")
+        end
+    end
+
+    weapondatavalues[key] = {
+        Module = module,
+        Desc = desc,
+        Displayname = displayname,
+        Type = type
+    }
 end
 
 -- Group: Module
-
 GST.Module = {}
 GST.Module.Name = ""
 GST.Module.DisplayName = ""
@@ -114,9 +126,13 @@ GST.Module.Enabled = true
 		Must be registered with <Module:Register>
 ]]--
 function GST.Module:New(name)
-	newModule = {Name = name}
-	self.__index = self
-	return setmetatable(newModule, self)
+    newModule = {
+        Name = name
+    }
+
+    self.__index = self
+
+    return setmetatable(newModule, self)
 end
 
 --[[
@@ -125,39 +141,42 @@ end
 	Registers a module table to be used.
 ]]--
 function GST.Module:Register()
-	local name = self.Name
-	if nodules[name] then
-		GST.Error("Module ".. name .." exists more then once!")
-		return
-	end
-	table.insert(modules,self)
-	GST.Info("Module ".. name .." registered!")
+    local name = self.Name
+
+    if modules[name] then
+        GST.Error("Module " .. name .. " exists more then once!")
+
+        return
+    end
+
+    table.insert(modules, self)
+    GST.Info("Module " .. name .. " registered!")
 end
 
 --[[
 	Function: EnableModule
 
+	Enables the given module
+
 	Parameters:
 		
 		name - Name of the module.
-
-	Enables the given module
 ]]--
 function GST.EnableModule(name)
-	modules[name].Enabled = true
+    modules[name].Enabled = true
 end
 
 --[[
 	Function: DisableModule
 
+	Disables the given module
+
 	Parameters:
 		
 		name - Name of the module.
-
-	Disables the given module
 ]]--
 function GST.DisableModule(name)
-	modules[name].Enabled = false
+    modules[name].Enabled = false
 end
 
 --[[
@@ -170,7 +189,7 @@ end
 	Toggles the given module
 ]]--
 function GST.ToggleModule(name)
-	modules[name].Enabled = not modules[name].Enabled
+    modules[name].Enabled = not modules[name].Enabled
 end
 
 --[[
@@ -185,7 +204,7 @@ end
 		The specified module, if it exists.
 ]]--
 function GST.GetModule(name)
-	return modules[name]
+    return modules[name]
 end
 
 --[[
@@ -196,7 +215,7 @@ end
 		A table containing all modules.
 ]]--
 function GST.GetModules()
-	return modules
+    return modules
 end
 
 -- Group: Data Values
@@ -214,8 +233,8 @@ end
 
 	Adds a data value specific to the module.
 ]]--
-function GST.Module:DataValue(name,type,desc,displayname)
-	_registerDataValue(name,self.Name,type,desc,displayname)
+function GST.Module:DataValue(name, type, desc, displayname)
+    _registerDataValue(name, self.Name, type, desc, displayname)
 end
 
 --[[
@@ -231,8 +250,8 @@ end
 
 	Adds a data value, not specific to any module.
 ]]--
-function GST.MiscDataValue(name,type,desc,displayname)
-	_registerDataValue(name,"Misc",type,desc,displayname)
+function GST.MiscDataValue(name, type, desc, displayname)
+    _registerDataValue(name, "Misc", type, desc, displayname)
 end
 
 --[[
@@ -248,8 +267,8 @@ end
 
 	Adds a weapon data value specific to the module.
 ]]--
-function GST.Module:WeaponDataValue(name,type,desc,displayname)
-	_registerWeaponDataValue(name,self.Name,type,desc,displayname)
+function GST.Module:WeaponDataValue(name, type, desc, displayname)
+    _registerWeaponDataValue(name, self.Name, type, desc, displayname)
 end
 
 --[[
@@ -265,8 +284,8 @@ end
 
 	Adds a weapon data value, not specific to any module.
 ]]--
-function GST.MiscWeaponDataValue(name,type,desc,displayname)
-	_registerWeaponDataValue(name,"Misc",type,desc,displayname)
+function GST.MiscWeaponDataValue(name, type, desc, displayname)
+    _registerWeaponDataValue(name, "Misc", type, desc, displayname)
 end
 
 --[[
@@ -281,7 +300,7 @@ end
 		The specified data value, if it exists.
 ]]--
 function GST.GetDataValue(name)
-	return datavalues[name]
+    return datavalues[name]
 end
 
 --[[
@@ -292,7 +311,7 @@ end
 		A table containing all data values.
 ]]--
 function GST.GetDataValues()
-	return datavalues
+    return datavalues
 end
 
 --[[
@@ -307,7 +326,7 @@ end
 		The specified weapon data value, if it exists.
 ]]--
 function GST.GetWeaponDataValue(name)
-	return weapondatavalues[name]
+    return weapondatavalues[name]
 end
 
 --[[
@@ -318,5 +337,5 @@ end
 		A table containing all weapon data values.
 ]]--
 function GST.GetWeaponDataValues()
-	return weapondatavalues
+    return weapondatavalues
 end

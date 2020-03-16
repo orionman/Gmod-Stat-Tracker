@@ -91,7 +91,7 @@ function db:onConnected()
 					string.format([[CREATE TABLE IF NOT EXISTS
 									gst_%s (
 										steamid VARCHAR(17) NOT NULL PRIMARY KEY,
-										kills INTEGER DEFAULT NULL
+										kills INTEGER DEFAULT NULL,
 										deaths INTEGER DEFAULT NULL
 									);]], name))
 

@@ -257,7 +257,7 @@ function Player:GetSessionTime()
 end
 
 function Player:AddDeath()
-	self:SetDeaths(self:GetDeaths() + 1,true)
+	self:SetDeaths(self:GetDeaths() + 1, true)
 end
 
 function Player:AddKill()

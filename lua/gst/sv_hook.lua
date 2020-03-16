@@ -28,13 +28,15 @@ function GST.PlayerDeath(victim, weapon, attacker)
 
 	if IsValid(weapon) and weapon:IsWeapon() then
 		local class = weapon.ClassName
-		victim:SetWeaponData(class,"deaths",victim:GetWeaponData(class,"deaths")+1)
-		if attacker:IsPlayer() then attacker:SetWeaponData(class,"kills",attacker:GetWeaponData(class,"kills")+1) end
+		victim:SetWeaponData(class, "deaths", victim:GetWeaponData(class, "deaths") + 1)
+		if attacker:IsPlayer() then attacker:SetWeaponData(class, "kills", attacker:GetWeaponData(class, "kills") + 1) end
 	end
 
 	if attacker:IsPlayer() then
 		attacker:AddKill()
-		attacker:SetData("headshots",attacker:GetData("headshots")+1)
+		if headshot then
+			attacker:SetData("headshots", attacker:GetData("headshots") + 1)
+		end
 	end
 end
 
@@ -49,8 +51,8 @@ end
 ]]--
 function GST.DataValueChanged(data)
 	local datamodule = GST.GetModule(data.Module)
-	if not datamodule.Enabled or not gmod.GetGamemode().Name == datamodule.Gamemode and not datamodule.Gamemode == "" then return false end
+	if not datamodule.Enabled or (gmod.GetGamemode().FolderName ~= datamodule.Gamemode and datamodule.Gamemode ~= "") then return false end
 end
 
-hook.Add("PlayerDeath","GST_PlayerDeath",GST.PlayerDeath)
-hook.Add("GST_DataValueChanged","GST_DataValueChangeValid",GST.PostLoad)
+hook.Add("PlayerDeath", "GST_PlayerDeath", GST.PlayerDeath)
+hook.Add("GST_DataValueChanged", "GST_DataValueChangeValid", GST.DataValueChanged)

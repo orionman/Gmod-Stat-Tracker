@@ -47,10 +47,9 @@ end
 	Prints an error message to the console. These are fatal errors that require immediate action.
 ]]--
 function GST.Error(message)
+	_logWithPrefix("[ERROR]", message)
+	
 	if CLIENT then
-		_logWithPrefix("[ERROR]", message)
 		MsgN("[GST] Please contact a server administrator with the error above and any additional information!")
-	else -- SERVER
-		_logWithPrefix("[ERROR]", message)
 	end
 end
