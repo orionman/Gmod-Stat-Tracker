@@ -18,7 +18,8 @@ GST.Credits = {
 			Email = "iviscositydevelopmentteam@gmail.com"
 		},
 		qualitycont = {
-			Nick = "qualitycont"
+			Nick = "qualitycont",
+			Email = "noqualitycont@gmail.com"
 		}
 	},
 	Designers = {
@@ -31,7 +32,58 @@ GST.Credits = {
 	Testers = {}
 }
 
+local function _includeSH(path)
+	include(path)
+	AddCSLuaFile(path)
+end
+
 local function _init()
-	-- TODO init function
+	-- TODO finish init function
+	file.CreateDir("gst")
+	if SERVER then
+		_includeSH( "gst/sh_util.lua" )
+		GST.Info( "sh_util.lua Loaded!" )
+
+		_includeSH( "gst/sh_module.lua" )
+		GST.Info( "sh_module.lua Loaded!" )
+
+		_includeSH( "gst/sh_contracts.lua" )
+		GST.Info( "sh_contracts.lua Loaded!" )
+
+		include( "gst/sv_mysql.lua" )
+		GST.Info( "sv_mysql.lua Loaded!" )
+
+		include( "gst/sv_player.lua" )
+		GST.Info( "sv_player.lua Loaded!" )
+
+		include( "gst/sv_hook.lua" )
+		GST.Info( "sv_hook.lua Loaded!" )
+
+		-- Modules
+		local files = file.Find( "gst/modules/*.lua", "LUA" )
+		if #files > 0 then
+			for _, file in ipairs( files ) do
+				GST.Info( "Loading module: " .. file )
+				_includeSH(file)
+			end
+		end
+	else
+		include( "gst/sh_util.lua" )
+		include( "gst/sh_module.lua" )
+		include( "gst/sh_contracts.lua" )
+
+		-- Modules, but on client side
+		local files = file.Find( "gst/modules/*.lua", "LUA" )
+		if #files > 0 then
+			for _, file in ipairs( files ) do
+				include(file)
+			end
+		end
+	end
+
+	GST.Info("Version ".. GST.Version .. " fully loaded!")
+	if not GST.Release then
+		GST.Warn("You are not using a release build of GST, errors may occur!")
+	end
 end
 hook.Add("Initialize", "GST_Init", _init)

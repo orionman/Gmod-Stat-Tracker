@@ -49,7 +49,7 @@ end
 		
 		*DO NOT CALL THIS MANUALLY, ONLY THROUGH `hook.Call`*
 ]]--
-function GST.DataValueChanged(data)
+function GST.DataValueChanged(data,value)
 	local datamodule = GST.GetModule(data.Module)
 	if not datamodule.Enabled or (gmod.GetGamemode().FolderName ~= datamodule.Gamemode and datamodule.Gamemode ~= "") then return false end
 end

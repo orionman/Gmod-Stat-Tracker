@@ -15,7 +15,6 @@
 	Values:
 
 		Int - SQL Integer.
-		String - SQL Varchar.
 		Float - SQL Float.
 
 ]]--
@@ -45,7 +44,7 @@ local function _registerDataValue(key, module, type, desc, displayname)
 											COLUMN_NAME = '%s')
 										ALTER TABLE gst_master
 											ADD %s %s NULL
-										END;]], key, key, type, val))
+										END;]], key, key, type))
 
     function Q:onSuccess(data)
         GST.Info("Value " .. key .. " added successfully!")
@@ -81,7 +80,7 @@ local function _registerWeaponDataValue(key, module, type, desc, displayname)
 												COLUMN_NAME = '%s')
 											ALTER TABLE gst_%s
 												ADD %s %s NULL
-											END;]], wep, key, wep, key, type, val))
+											END;]], wep, key, wep, key, type))
 
         function Q:onSuccess(data)
             GST.Info("Weapon value " .. key .. " added successfully!")
