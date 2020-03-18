@@ -185,6 +185,9 @@ function m.SetData(ply,key,val)
 		GST.Error("Tried to set data on a non-player!")
 		return
 	end
+
+	if not hook.Call("GST_DataValueChanged", nil, ply, key, GST.GetData(ply,key,val)) then return end
+
 	local sid = ply:SteamID()
 	local Q = db:query(string.format("UPDATE gst_master SET %s = ".. tostring(val) .." WHERE steamid = %s", key, sid))
 
@@ -237,6 +240,8 @@ function m.SetWeaponData(ply,weapon,key,val)
 		GST.Error("Tried to get weapon data from a non-weapon!")
 		return
 	end
+
+	if not hook.Call("GST_DataValueChanged", nil, ply, key, GST.GetWeaponData(ply, weapon, key, val), weapon) then return end
 
 	local sid = ply:SteamID()
 	local type = GST.GetDataValue(key).Type

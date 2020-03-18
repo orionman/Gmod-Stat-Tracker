@@ -1,5 +1,5 @@
 --[[
-	File: sv_module.lua
+	File: sh_module.lua
 	
 	Module meta functions and values.
 
@@ -108,6 +108,7 @@ GST.Module.Version = ""
 GST.Module.Author = ""
 GST.Module.Gamemode = ""
 GST.Module.Enabled = true
+
 
 --[[
 	Function: Module:New
