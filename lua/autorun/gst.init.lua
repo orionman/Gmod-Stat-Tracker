@@ -64,7 +64,23 @@ local function _init()
 		if #files > 0 then
 			for _, file in ipairs( files ) do
 				GST.Info( "Loading module: " .. file )
-				_includeSH(file)
+				_includeSH("gst/modules/" .. file)
+			end
+		end
+		
+		files = file.Find( "gst/modules/sv/*.lua", "LUA" )
+		if #files > 0 then
+			for _, file in ipairs( files ) do
+				GST.Info( "Loading SERVER module: " .. file )
+				_includeSH("gst/modules/sv/" .. file)
+			end
+		end
+		
+		files = file.Find( "gst/modules/cl/*.lua", "LUA" )
+		if #files > 0 then
+			for _, file in ipairs( files ) do
+				GST.Info( "Loading CLIENT module: " .. file )
+				AddCSLuaFile("gst/modules/cl/" .. file)
 			end
 		end
 	else
@@ -76,7 +92,15 @@ local function _init()
 		local files = file.Find( "gst/modules/*.lua", "LUA" )
 		if #files > 0 then
 			for _, file in ipairs( files ) do
-				include(file)
+				include("gst/modules/" .. file)
+			end
+		end
+
+		files = file.Find("gst/modules/cl/*.lua", "LUA")
+		if #files > 0 then
+			for _, file in ipairs(files) do
+				GST.Info("Loading CLIENT module: " .. file)
+				include("gst/modules/cl/" .. file)
 			end
 		end
 	end
