@@ -1,5 +1,5 @@
 --[[
-	File: sv_hook.lua
+	Title: Hooks
 
 	Contains all the main hooks for GST. 
 ]]--

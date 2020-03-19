@@ -1,5 +1,5 @@
 --[[
-	File: sv_mysql.lua
+	Title: MySQL
 
 	MySQL is a database software used for synchronizing information between servers. Gmod MySQL uses FredyH's MySQLOO (https://github.com/FredyH/MySQLOO)
 	in order to function. If this is not present in your server, MySQL will NOT work.

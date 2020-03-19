@@ -1,5 +1,5 @@
 --[[
-	File: sh_util.lua
+	Title: Utilities
 
 	Contains public utility functions that are commonly used.
 ]]--
