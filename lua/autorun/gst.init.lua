@@ -41,22 +41,22 @@ local function _init()
 	-- TODO finish init function
 	file.CreateDir("gst")
 	if SERVER then
-		_includeSH( "gst/sh_util.lua" )
+		_includeSH( "gst/shared/sh_util.lua" )
 		GST.Info( "sh_util.lua Loaded!" )
 
-		_includeSH( "gst/sh_module.lua" )
+		_includeSH( "gst/shared/sh_module.lua" )
 		GST.Info( "sh_module.lua Loaded!" )
 
-		_includeSH( "gst/sh_contracts.lua" )
+		_includeSH( "gst/shared/sh_contracts.lua" )
 		GST.Info( "sh_contracts.lua Loaded!" )
 
-		include( "gst/sv_mysql.lua" )
+		include( "gst/server/sv_mysql.lua" )
 		GST.Info( "sv_mysql.lua Loaded!" )
 
-		include( "gst/sv_player.lua" )
+		include( "gst/server/sv_player.lua" )
 		GST.Info( "sv_player.lua Loaded!" )
 
-		include( "gst/sv_hook.lua" )
+		include( "gst/server/sv_hook.lua" )
 		GST.Info( "sv_hook.lua Loaded!" )
 
 		-- Modules
