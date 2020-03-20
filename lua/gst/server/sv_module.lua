@@ -67,6 +67,8 @@ local function _registerWeaponDataValue(key, module, type, desc, displayname)
     }
 end
 
+-- Group: Modules
+
 --[[
 	Function: EnableModule
 
@@ -122,13 +124,13 @@ function GST.GetModule(name)
 end
 
 --[[
-	Function: GetGST.Modules
+	Function: GetModules
 
 	Returns:
 
 		A table containing all GST.Modules.
 ]]--
-function GST.GetGST.Modules()
+function GST.GetModules()
     if SERVER then return GST.Modules end
 end
 
@@ -164,7 +166,7 @@ end
 		desc - Description used in the GUI.
 		displayname - Pretty name used in the GUI.
 ]]--
-function GST.RegisterMiscDataValue(name, type, desc, displayname)
+function GST.MiscDataValue(name, type, desc, displayname)
     _registerDataValue(name, "Misc", type, desc, displayname)
 end
 
@@ -181,7 +183,7 @@ end
 		desc - Description used in the GUI.
 		displayname - Pretty name used in the GUI.
 ]]--
-function GST.Module:RegisterWeaponDataValue(name, type, desc, displayname)
+function GST.Module:WeaponDataValue(name, type, desc, displayname)
     _registerWeaponDataValue(name, self.Name, type, desc, displayname)
 end
 
@@ -198,7 +200,7 @@ end
 		desc - Description used in the GUI.
 		displayname - Pretty name used in the GUI.
 ]]--
-function GST.RegisterMiscWeaponDataValue(name, type, desc, displayname)
+function GST.MiscWeaponDataValue(name, type, desc, displayname)
     _registerWeaponDataValue(name, "Misc", type, desc, displayname)
 end
 

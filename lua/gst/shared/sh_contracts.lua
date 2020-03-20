@@ -57,13 +57,13 @@ GST.Contract.Module = "Misc"
 --[[
 	Function: Contract:OnDataChanged
 
+    Called when the data which the contract is linked to changes.
+    Return true if the data change should progress the contract.
+
 	Parameters:
 		
 		ply - The player which value has changed.
         value - The value the data has right now.
-
-    Called when the data which the contract is linked to changes.
-    Return true if the data change should progress the contract.
 	
 ]]--
 function GST.Contract:OnDataChanged(ply,value)
@@ -73,11 +73,11 @@ end
 --[[
 	Function: Contract:OnComplete
 
+    Called when a player completes the contract.
+
 	Parameters:
 		
 		ply - The player which completed the contract
-
-    Called when a player completes the contract.
 	
 ]]--
 function GST.Contract:OnComplete(ply)
@@ -87,11 +87,11 @@ end
 --[[
 	Function: Contract:OnStart
 
+    Called when a player starts the contract.
+
 	Parameters:
 		
 		ply - The player which started the contract
-
-    Called when a player starts the contract.
 	
 ]]--
 function GST.Contract:OnStart(ply)
@@ -174,11 +174,11 @@ end
 --[[
 	Function: Module:LinkContract
 
+    Links the specified contract to the module, if possible.
+
 	Parameters:
 		
 		name - Name of the contract.
-
-	Links the specified contract to the module, if possible.
 ]]--
 function GST.Module:LinkContract(name)
     contracts[name].Module = self.Name

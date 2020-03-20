@@ -91,6 +91,54 @@ end
 	These are functions and hooks that Modules can override to have certain functionality.
 	These are only defined here so that I can call them without errors.
 ]]--
+
+--[[
+	Function: Module:PlayerDeath
+
+	Runs when a player dies.
+
+	Parameters:
+
+		vic - The victim.
+		ent - The entity used to kill the victim.
+		atk - The attacker.
+]]--
 function GST.Module:PlayerDeath(vic, ent, atk)
 end
-hook.Add("PlayerDeath", "Module_PlayerDeath", function(v, e, a) GST.Module:PlayerDeath(v, e, a) end)
+
+--[[
+	Function: Module:PlayerTakeDamage
+
+	Runs when a player takes damage.
+
+	Parameters:
+
+		vic - The victim.
+		info - Information about the damage.
+]]--
+function GST.Module:PlayerTakeDamage(vic, info)
+end
+
+--[[
+	Function: Module:PlayerSpawn
+
+	Runs when a player spawns.
+
+	Parameters:
+
+		ply - The player.
+]]--
+function GST.Module:PlayerSpawn(ply)
+end
+
+hook.Add("PlayerDeath", "Module_PlayerDeath", function(v, e, a) 
+	GST.Module:PlayerDeath(v, e, a) 
+end)
+
+hook.Add("EntityTakeDamage", "Module_EntityTakeDamage", function(v, i) 
+	if v:IsPlayer() then GST.Module:PlayerTakeDamage(v, i) end 
+end)
+
+hook.Add("PlayerSpawn", "Module_PlayerSpawn", function(p) 
+	GST.Module:PlayerSpawn(p) 
+end)
