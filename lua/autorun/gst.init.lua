@@ -59,12 +59,20 @@ local function _init()
 		include( "gst/server/sv_hook.lua" )
 		GST.Info( "sv_hook.lua Loaded!" )
 
+		include("gst/server/sv_module.lua")
+		GST.Info("sv_module.lua Loaded!")
+
 		-- Modules
 		local files = file.Find( "gst/modules/*.lua", "LUA" )
 		if #files > 0 then
 			for _, file in ipairs( files ) do
 				GST.Info( "Loading module: " .. file )
-				_includeSH("gst/modules/" .. file)
+				
+				GST.Module = {}
+				include("gst/modules/" .. file)
+				if GST.Module.Gamemode and engine.ActiveGamemode() == GST.Module.Gamemode then
+					GST.Module.Enabled = false -- don't use
+				end
 			end
 		end
 		
