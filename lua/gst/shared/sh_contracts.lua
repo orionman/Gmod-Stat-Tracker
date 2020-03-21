@@ -22,15 +22,20 @@ local function _registerContract(contract)
     end
     local desc = contract.Description or "No Description Set"
     local displayname = contract.Displayname or name
-    
+
+    local goalstr = [[]]
+
+    for k, v in pairs(contract.Goals) do
+        goalstr = goalstr + "   "..k .. " INTEGER DEFAULT 0\n"
+    end   
 
     local Q = GST.DataProvider:query(string.format([[CREATE TABLE IF NOT EXISTS
 									gst_contract_%s (
 										steamid VARCHAR(17) NOT NULL PRIMARY KEY,
 										cur INTEGER DEFAULT 0
                                         complete BIT DEFAULT 0
-                                        complete_time DATE DEFAULT NULL
-									);]], name)))
+                                        complete_time DATE DEFAULT NULL]]..goalstr
+									[[);]], name)))
 
     function Q:onSuccess(data)
         GST.Info("Contract " .. name .. " added successfully!")
@@ -43,6 +48,65 @@ local function _registerContract(contract)
     contracts[name] = contract
 end
 
+local function _setContractComplete(ply, contract, amount)
+    assert(amount == true or amount == false, "Complete must be set to a bool!")
+    if not ply:IsPlayer() then
+		GST.Error("Tried to increment contract data on a non-player!")
+		return
+	end
+
+    if not contracts[contract] then
+        GST.Error("Tried to increment data on a non-contract!")
+		return
+    end
+
+    if amount then amount = 1 else amount = 0 end
+
+    local sid = ply:SteamID()
+    local Q = db:query(string.format("UPDATE gst_contract_%s SET complete = ".. tostring(amount) .." WHERE steamid = %s", contract, sid))
+
+	function Q:onError(err,sql)
+		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+	end
+end
+
+local function _setContractProgress(ply, contract, amount)
+    if not ply:IsPlayer() then
+		GST.Error("Tried to set contract data on a non-player!")
+		return
+	end
+    local condata = contracts[contract]
+
+    if not condata then
+        GST.Error("Tried to set data on a non-contract!")
+		return
+    end
+
+    local sid = ply:SteamID()
+    local plydata = db:query(string.format("SELECT * FROM gst_contract_%s WHERE steamid = " .. sid .. ";", contract))
+    if plydata.complete == 1 then return end -- Checks if the contract is complete
+
+    if amount >= condata.Goal then _setContractComplete(ply, contract, true) end
+
+	local Q = db:query(string.format("UPDATE gst_contract_%s SET cur = ".. tostring(amount) .." WHERE steamid = %s", contract, sid))
+
+	function Q:onError(err,sql)
+		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+	end
+
+end
+
+local function _addContractProgress(ply, contract, amount)
+    if not ply:IsPlayer() then
+		GST.Error("Tried to increment contract data on a non-player!")
+		return
+	end
+
+    local sid = ply:SteamID()
+    local plydata = db:query(string.format("SELECT * FROM gst_contract_%s WHERE steamid = " .. sid .. ";", contract))
+    _setContractProgress(ply, contract, amount + plydata.cur)
+end
+
 -- Group: Contracts
 
 GST.Contract = {}
@@ -50,7 +114,23 @@ GST.Contract.Name = ""
 GST.Contract.DisplayName = ""
 GST.Contract.Description = ""
 GST.Contract.Data = "" -- Which data value to track
-GST.Contract.Goal = "" -- The amount the data value has to get for the contract to be complete
+GST.Contract.Goals = {
+    --[[
+        For displaying scores on the hud and secondary goals
+        You need to specify at least one
+    ]]--
+    maingoal = {
+        Description = "Do something", -- The description for the HUD and GUI
+        Value = 1, -- How much progress this goal adds
+        Amount = 0 -- How many times this goal can be completed, 0 or less for infinite times
+    },
+    secondarygoal = {
+        Description = "Do something more specific",
+        Value = 3,
+        Amount = 5
+    },
+}
+GST.Contract.GoalAmount = 100 -- The amount of progress a player has to get for the contract to be complete, has to be positive
 GST.Contract.Onetime = false
 GST.Contract.Module = "Misc"
 
@@ -59,6 +139,7 @@ GST.Contract.Module = "Misc"
 
     Called when the data which the contract is linked to changes.
     Return true if the data change should progress the contract.
+    Also eturn how much the data should change.
 
 	Parameters:
 		
@@ -67,7 +148,7 @@ GST.Contract.Module = "Misc"
 	
 ]]--
 function GST.Contract:OnDataChanged(ply,value)
-    return true
+    return true, 0
 end
 
 --[[
@@ -138,11 +219,6 @@ function GST.Contract:Register()
     end
 
     _registerContract(self)
-    hook.Add("GST_DataValueChanged", "GST_TriggerContracts_".. self.Name, function(ply,data,value)
-        if data == self.Data then
-            return self:OnDataChanged(ply, value)
-        end
-    end)
 end
 
 --[[
@@ -183,3 +259,17 @@ end
 function GST.Module:LinkContract(name)
     contracts[name].Module = self.Name
 end
+
+hook.Add("GST_DataValueChanged", "GST_TriggerContracts".. self.Name, function(ply,data,value)
+    for k,v in pairs(contracts) do
+        if data == v.Data then
+            local increment, amount = self:OnDataChanged(ply, value)
+
+            if increment and amount then
+                _addContractProgress(ply, k, amount)
+            end
+            increment = nil
+            amount = nil
+        end
+    end
+end)
