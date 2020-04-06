@@ -31,6 +31,7 @@ require("mysqloo") -- Required for MySQLOO to be loaded. Will throw an error if 
 GST.MySQL = {} -- Global table for GST-related MySQL functions.
 GST.DataProvider = GST.MySQL -- Cleaner access
 local _internalData = {} -- Used for storing data of connected players if DB goes down.
+local _internalWepData = {} -- Used for storing weapon data of connected players if DB goes down.
 local m = GST.MySQL -- Because I don't want to type "GST.MySQL" over and over.
 
 -- Create database
@@ -126,44 +127,43 @@ timer.Create("GST_PingDatabase_" .. tostring(math.random(-2000000000, 2000000001
 		GST.DataProvider = GST.SQLite
 	else
 		GST.Info("Connection restored to database. Updating...")
-		GST.MySQL.UpdateAll(true)
+		GST.MySQL.UpdateAll()
 		GST.DataProvider = GST.MySQL
 	end
 end)
 
--- TODO finish function
-function m.UpdateAll(from_local)
+function m.UpdateAll()
 	local players = player.GetAll()
 
-	if from_local then -- Update all connected players from the local database.
-		for _, ply in ipairs(players) do
-			if ply:IsBot() continue end
-			-- Data to be entered
-			local sid = ply:SteamID()
-			local kills = ply:GetKills()
-			local deaths = ply:GetDeaths()
-			local time
+	for _, ply in ipairs(players) do
+		if ply:IsBot() continue end
+		-- Data to be entered
+		local sid = ply:SteamID()
 
-			if ply.GetUTimeTotalTime then
-				time = ply:GetUTimeTotalTime()
-			end
+		local Q
 
-			local playerData = sql.QueryRow("SELECT * FROM gst_master WHERE steamid = " .. sid .. ";")
-			local weaponData = sql.QueryRow("SELECT * FROM gst_weapon WHERE steamid = " .. sid .. ";")
-			
-			local Q1 = db:query(string.format("UPDATE gst_master SET kills = %d, deaths = %d, time = %d WHERE steamid = %s", kills, deaths, _valueOrNull(time), sid))
+		for k,v in pairs(_internalData[sid]) do
+			Q = db:query(string.format("UPDATE gst_master SET %s = ".. _valueOrNull(v) .." WHERE steamid = %s", k, sid))
 
-			function Q1:onError(err, sql)
+			function Q:onError(err, sql)
 				GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
 			end
 
-			Q1.onSuccess = _defaultCallback
-			_internalData[sid] = {kills, deaths, time}
+			Q.onSuccess = _defaultCallback
 		end
-	else -- This assumes we are only updating connected players using their current data
-		for _, ply in ipairs(players) do
-			
+
+		for k, v in pairs(_internalWepData[sid]) do
+			for k1, v1 in pairs(v) do
+				Q = db:query(string.format("UPDATE gst_%s SET %s = ".. _valueOrNull(v1) .." WHERE steamid = %s", k, k1, sid))
+
+				function Q:onError(err, sql)
+					GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+				end
+
+				Q.onSuccess = _defaultCallback
+			end
 		end
+		
 	end
 end
 
@@ -195,6 +195,7 @@ function m.SetData(ply,key,val)
 		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
 	end
 
+	_internalData[sid][key] = val
 	Q.onSuccess = _defaultCallback
 end
 
@@ -251,6 +252,7 @@ function m.SetWeaponData(ply,weapon,key,val)
 		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
 	end
 
+	_internalWepData[sid][weapon][key] = val
 	Q.onSuccess = _defaultCallback
 end
 
