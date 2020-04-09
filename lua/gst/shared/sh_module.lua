@@ -35,14 +35,6 @@ GST.DataType = {
 --[[ Local Helper Functions and Tables ]]--
 
 -- Group: Module
-GST.Module.Name = ""
-GST.Module.DisplayName = ""
-GST.Module.Description = ""
-GST.Module.Version = ""
-GST.Module.Author = ""
-GST.Module.Gamemode = ""
-GST.Module.Enabled = true
-
 
 --[[
 	Function: Module:New

@@ -135,6 +135,8 @@ end)
 function m.UpdateAll()
 	local players = player.GetAll()
 
+	GST.MessageAll("Database is updating... Expect some lag...")
+
 	for _, ply in ipairs(players) do
 		if ply:IsBot() continue end
 		-- Data to be entered
@@ -164,6 +166,7 @@ function m.UpdateAll()
 			end
 		end
 		
+		GST.MessageAll("Update complete!")
 	end
 end
 

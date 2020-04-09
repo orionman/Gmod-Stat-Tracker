@@ -53,3 +53,23 @@ function GST.Error(message)
 		MsgN("[GST] Please contact a server administrator with the error above and any additional information!")
 	end
 end
+--[[
+		Function: MessageAll
+
+		Sends a message to everyone. This is shared, but does nothing on the client.
+]]--
+function GST.MessageAll(message)
+	if ULib then
+		ULib.tsayColor(_, "", -- empty string is required because color doesn't always work right away
+			Color(255, 255, 255), "[", 
+			Color(14, 176, 160), "GST",
+			Color(255, 255, 255), "] ",
+			Color(199, 12, 37), message)
+	elseif SERVER then
+		net.Start("GST_MessageAll")
+			net.WriteString(message)
+		net.Broadcast()
+	end
+end
+
+function GST.PlayerMessage

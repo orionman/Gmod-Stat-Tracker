@@ -2,6 +2,7 @@
 	This is the init file for Gmod Stat Tracker, or GST.
 ]]--
 GST = {} -- Global table
+GST.FirstLoad = GST.FirstLoad or true
 
 if SERVER then
 	AddCSLuaFile()
@@ -37,64 +38,94 @@ local function _includeSH(path)
 	AddCSLuaFile(path)
 end
 
+-- Should only be called internally. There's no reason for it to be called elsewhere.
+-- To check version, compare to GST.Version
+function GST.VersionCheck()
+	local url = "https://raw.githubusercontent.com/iViscosity/Gmod-Stat-Tracker/master/build.version"
+
+	local response = ""
+	http.Fetch(url,
+		function(body) -- onSuccess
+			response = body
+		end,
+
+		function(err) -- onError
+			ErrorNoHalt(err) -- GST.Error is not defined yet.
+		end
+	)
+	if response ~= GST.Version then
+		local message = "GST is not up to date! Consider updating at https://github.com/iViscosity/Gmod-Stat-Tracker/releases!"
+	
+		print(message)
+		if SERVER then ServerLog(message) end
+	end
+end
+
 local function _init()
 	-- TODO finish init function
 	file.CreateDir("gst")
+
+	if GST.FirstLoad then
+		GST.VersionCheck()
+	end
+
+	hook.Run("GST_PreInitialize")
+
+	local files
+
 	if SERVER then
-		_includeSH( "gst/shared/sh_util.lua" )
-		GST.Info( "sh_util.lua Loaded!" )
+		files = file.Find("gst/server/sv_*.lua")
+		for _, fil in pairs(files) do
+			include("gst/server/" .. fil)
+			GST.Info(fil .. " loaded!")
+		end
 
-		_includeSH( "gst/shared/sh_module.lua" )
-		GST.Info( "sh_module.lua Loaded!" )
+		files = file.Find("gst/shared/sh_*.lua")
+		for _, fil in pairs(files) do
+			_includeSH("gst/shared/" .. fil)
+			GST.Info(fil .. " loaded!")
+		end
 
-		_includeSH( "gst/shared/sh_contracts.lua" )
-		GST.Info( "sh_contracts.lua Loaded!" )
-
-		include( "gst/server/sv_mysql.lua" )
-		GST.Info( "sv_mysql.lua Loaded!" )
-
-		include( "gst/server/sv_player.lua" )
-		GST.Info( "sv_player.lua Loaded!" )
-
-		include( "gst/server/sv_hook.lua" )
-		GST.Info( "sv_hook.lua Loaded!" )
-
-		include("gst/server/sv_module.lua")
-		GST.Info("sv_module.lua Loaded!")
+		files = file.Find("gst/client/cl_*.lua")
+		for _, fil in pairs(files) do
+			AddCSLuaFile("gst/client/" .. fil)
+			GST.Info(fil .. " loaded!")
+		end
 
 		-- Modules
-		local files = file.Find( "gst/modules/*.lua", "LUA" )
+		files = file.Find( "gst/modules/*.lua", "LUA" )
 		if #files > 0 then
 			for _, file in ipairs( files ) do
 				GST.Info( "Loading module: " .. file )
-				
+
 				GST.Module = {}
+				GST.Module.Name = ""
+				GST.Module.DisplayName = ""
+				GST.Module.Description = ""
+				GST.Module.Version = ""
+				GST.Module.Author = ""
+				GST.Module.Gamemode = ""
+				GST.Module.Enabled = true
+				GST.Module.Init = function() end
+
 				include("gst/modules/" .. file)
-				if GST.Module.Gamemode and engine.ActiveGamemode() == GST.Module.Gamemode then
-					GST.Module.Enabled = false -- don't use
+				if GST.Module.Gamemode and engine.ActiveGamemode() == GST.Module.Gamemode and GST.Module.Enabled then
+					GST.Module.Init()
 				end
 			end
 		end
-		
-		files = file.Find( "gst/modules/sv/*.lua", "LUA" )
-		if #files > 0 then
-			for _, file in ipairs( files ) do
-				GST.Info( "Loading SERVER module: " .. file )
-				_includeSH("gst/modules/sv/" .. file)
-			end
-		end
-		
-		files = file.Find( "gst/modules/cl/*.lua", "LUA" )
-		if #files > 0 then
-			for _, file in ipairs( files ) do
-				GST.Info( "Loading CLIENT module: " .. file )
-				AddCSLuaFile("gst/modules/cl/" .. file)
-			end
-		end
 	else
-		include( "gst/sh_util.lua" )
-		include( "gst/sh_module.lua" )
-		include( "gst/sh_contracts.lua" )
+		files = file.Find("gst/shared/sh_*.lua")
+		for _, fil in pairs(files) do
+			_includeSH("gst/shared/" .. fil)
+			GST.Info(fil .. " loaded!")
+		end
+
+		files = file.Find("gst/client/cl_*.lua")
+		for _, fil in pairs(files) do
+			include("gst/client/" .. fil)
+			GST.Info(fil .. " loaded!")
+		end
 
 		-- Modules, but on client side
 		local files = file.Find( "gst/modules/*.lua", "LUA" )
@@ -117,5 +148,10 @@ local function _init()
 	if not GST.Release then
 		GST.Warn("You are not using a release build of GST, errors may occur!")
 	end
+
+	GST.FirstLoad = false
+	GST.CheckULX() -- Checks if ulx is present and does some stuff if it does
+
+	hook.Run("GST_PostInitialize")
 end
 hook.Add("Initialize", "GST_Init", _init)
