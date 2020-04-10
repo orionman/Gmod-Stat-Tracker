@@ -32,6 +32,7 @@ GST.MySQL = {} -- Global table for GST-related MySQL functions.
 GST.DataProvider = GST.MySQL -- Cleaner access
 local _internalData = {} -- Used for storing data of connected players if DB goes down.
 local _internalWepData = {} -- Used for storing weapon data of connected players if DB goes down.
+
 local m = GST.MySQL -- Because I don't want to type "GST.MySQL" over and over.
 
 -- Create database
@@ -50,9 +51,13 @@ local function _defaultCallback(q, data)
 	GST.Log("Query \"" .. q .. "\" completed successfully.")
 end
 
+local function _defaultErrorCallback(q, sql, err)
+	GST.Error("Query \"%s\" threw an error: %s", sql, err)
+end
+
 --[[ GST.MySQL Functionality ]]--
 
-local allWeapons = nil
+local allWeapons = allWeapons or nil
 function db:onConnected()
 	GST.Info("Connected to the MySQL database! Creating tables...")
 	GST.Info("Creating master table...")
@@ -97,7 +102,7 @@ function db:onConnected()
 									);]], name))
 
 				function Q2:onError(err, sql)
-					GST.Error("Could not create weapon table for weapon: \"" .. name .. "\". Error: " .. err)
+					GST.Error("Could not create weapon table for weapon: \"%s\". Error: %s", name, err)
 				end
 
 				Q2.onSuccess = _defaultCallback
@@ -111,7 +116,7 @@ function db:onConnected()
 end
 
 function db:onConnectionFailed(err)
-	GST.Error("Failed to connect to the MySQL database (" .. err .. "). Reverting to SQLite...")
+	GST.Error("Failed to connect to the MySQL database: %s. Reverting to SQLite...", err)
 	GST.DataProvider = GST.SQLite
 	GST.DataProvider.UpdateAll()
 end
@@ -135,34 +140,32 @@ end)
 function m.UpdateAll()
 	local players = player.GetAll()
 
-	GST.MessageAll("Database is updating... Expect some lag...")
+	GST.MessageAll("Database is updating... expect some lag.")
 
 	for _, ply in ipairs(players) do
 		if ply:IsBot() continue end
 		-- Data to be entered
-		local sid = ply:SteamID()
+		local sid = ply:SteamID64()
 
-		local Q
+		local q
 
 		for k,v in pairs(_internalData[sid]) do
-			Q = db:query(string.format("UPDATE gst_master SET %s = ".. _valueOrNull(v) .." WHERE steamid = %s", k, sid))
+			q = db:query(string.format("UPDATE gst_master SET %s = %s WHERE steamid = %s", k, _valueOrNull(v), sid))
 
-			function Q:onError(err, sql)
-				GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
-			end
+			q.onError = _defaultErrorCallback
+			q.onSuccess = _defaultCallback
 
-			Q.onSuccess = _defaultCallback
+			q:start()
 		end
 
 		for k, v in pairs(_internalWepData[sid]) do
 			for k1, v1 in pairs(v) do
-				Q = db:query(string.format("UPDATE gst_%s SET %s = ".. _valueOrNull(v1) .." WHERE steamid = %s", k, k1, sid))
+				q = db:query(string.format("UPDATE gst_%s SET %s = %s WHERE steamid = %s", k, k1, _valueOrNull(v1), sid))
 
-				function Q:onError(err, sql)
-					GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
-				end
+				q.onError = _defaultErrorCallback
+				q.onSuccess = _defaultCallback
 
-				Q.onSuccess = _defaultCallback
+				q:start()
 			end
 		end
 		
@@ -175,15 +178,15 @@ end
 --[[
 	Function: MySQL.SetData
 
+	Changes a players data value.
+
 	Parameters:
 		
 		ply - Player to set the data of.
 		key - Data to change.
 		val - Value to change it to.
-
-	Changes a players data value.
 ]]--
-function m.SetData(ply,key,val)
+function m.SetData(ply, key, val)
 	if not ply:IsPlayer() then
 		GST.Error("Tried to set data on a non-player!")
 		return
@@ -191,15 +194,17 @@ function m.SetData(ply,key,val)
 
 	if not hook.Call("GST_DataValueChanged", nil, ply, key, GST.GetData(ply,key,val)) then return end
 
-	local sid = ply:SteamID()
-	local Q = db:query(string.format("UPDATE gst_master SET %s = ".. tostring(val) .." WHERE steamid = %s", key, sid))
+	local sid = ply:SteamID64()
+	local q = db:query(string.format("UPDATE gst_master SET %s = %s WHERE steamid = %s", key, tostring(val), sid))
 
-	function Q:onError(err,sql)
-		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
+	function q:onError(err,sql)
+		GST.Error("Query \"%s\" threw an error: %s", sql, err)
 	end
 
+	q.onSuccess = _defaultCallback
 	_internalData[sid][key] = val
-	Q.onSuccess = _defaultCallback
+
+	q:start()
 end
 
 --[[
@@ -211,20 +216,34 @@ end
 
 	Returns:
 
-		A table containing a players data.
-
+		A table containing a player's data.
 ]]--
 function m.GetData(ply)
-	if not ply:IsPlayer() then
+	if not IsValid(ply) or not ply:IsPlayer() then
 		GST.Error("Tried to get data from a non-player!")
 		return
 	end
-	local sid = ply:SteamID()
-	return sql.QueryRow("SELECT * FROM gst_master WHERE steamid = " .. sid .. ";")
+
+	local sid = ply:SteamID64()
+	local Q = db:query(string.format("SELECT * FROM gst_master WHERE steamid = %s", sid))
+
+	local _data
+
+	function Q:onSuccess(data)
+		_data = data
+	end
+
+	function Q:onError(err, sql)
+		GST.Error("Failed to get player %s data: %s", ply:Nick(), err)
+	end
+	
+	return _data[1]
 end
 
 --[[
 	Function: MySQL.SetWeaponData
+
+	Changes a players weapon data value.
 
 	Parameters:
 		
@@ -232,31 +251,29 @@ end
 		weapon - Weapon to set the data of.
 		key - Data to change.
 		val - Value to change it to.
-
-	Changes a players weapon data value.
 ]]--
 function m.SetWeaponData(ply,weapon,key,val)
-	if not ply:IsPlayer() then
+	if not IsValid(ply) or not ply:IsPlayer() then
 		GST.Error("Tried to set data on a non-player!")
 		return
 	end
-	if not weapon:IsWeapon() then
+
+	if not IsValid(weapon) or not weapon:IsWeapon() then
 		GST.Error("Tried to get weapon data from a non-weapon!")
 		return
 	end
 
 	if not hook.Call("GST_DataValueChanged", nil, ply, key, GST.GetWeaponData(ply, weapon, key, val), weapon) then return end
 
-	local sid = ply:SteamID()
-	local type = GST.GetDataValue(key).Type
-	local Q = db:query(string.format("UPDATE gst_%s SET %s = ".. tostring(val) .." WHERE steamid = %s", weapon:GetClass(), key, sid))
+	local sid = ply:SteamID64()
+	local Q = db:query(string.format("UPDATE gst_%s SET %s=%s WHERE steamid = %s", weapon:GetClass(), key, tostring(val), sid))
 
-	function Q:onError(err,sql)
-		GST.Error("Query \"" .. sql .. "\" threw an error: " .. err)
-	end
+	Q.onError = _defaultErrorCallback
+	Q.onSuccess = _defaultCallback
+
+	Q:start()
 
 	_internalWepData[sid][weapon][key] = val
-	Q.onSuccess = _defaultCallback
 end
 
 
@@ -270,19 +287,31 @@ end
 
 	Returns:
 
-		A players weapon data.
-
+		A player's weapon data.
 ]]--
-function m.GetWeaponData(ply,weapon)
-	if not ply:IsPlayer() then
+function m.GetWeaponData(ply, weapon)
+	if not IsValid(ply) or not ply:IsPlayer() then
 		GST.Error("Tried to get data from a non-player!")
 		return
 	end
-	if not weapon:IsWeapon() then
+
+	if not IsValid(weapon) or weapon:IsWeapon() then
 		GST.Error("Tried to get weapon data from a non-weapon!")
 		return
 	end
 
-	local sid = ply:SteamID()
-	return sql.QueryRow("SELECT * FROM gst_".. weapon:GetClass() .." WHERE steamid = " .. sid .. ";")
+	local sid = ply:SteamID64()
+	if _internalWepData[sid][weapon][key] then return _internalWepData[sid][weapon][key] end
+
+	local q = db:query(string.format("SELECT * FROM gst_%s WHERE steamid = %s", weapon:GetClass(), sid))
+	
+	local _data
+
+	function q:onSuccess(data)
+		_data = data
+	end
+
+	q.onError = _defaultErrorCallback
+
+	return _data[1]
 end

@@ -6,12 +6,12 @@
 
 --[[ Helper functions ]]--
 
-local function _logWithPrefix(message, prefix)
+local function _logWithPrefix(message, prefix, ...)
 	if SERVER then
-		ServerLog("[GST] " .. prefix .. " " .. message)
+		ServerLog("[GST] " .. prefix .. " " .. string.format(message, ...))
 	end
 
-	MsgN("[GST] " .. prefix .. " " .. message)
+	MsgN("[GST] " .. prefix .. " " .. string.format(message, ...))
 end
 
 --[[
@@ -19,8 +19,8 @@ end
 
 	Prints a message out to the console.
 ]]--
-function GST.Log(message)
-	_logWithPrefix("[LOG]", message)
+function GST.Log(message, ...)
+	_logWithPrefix("[LOG]", message, ...)
 end
 
 --[[
@@ -28,8 +28,8 @@ end
 
 	Prints an info message out to the console.
 ]]--
-function GST.Info(message)
-	_logWithPrefix("[INFO]", message)
+function GST.Info(message, ...)
+	_logWithPrefix("[INFO]", message, ...)
 end
 
 --[[
@@ -37,8 +37,8 @@ end
 
 	Prints an error message to the console. These are non-fatal errors that have no immediate effect but may affect future function calls.
 ]]--
-function GST.Warn(message)
-	_logWithPrefix("[WARN]", message)
+function GST.Warn(message, ...)
+	_logWithPrefix("[WARN]", message, ...)
 end
 
 --[[
@@ -46,8 +46,8 @@ end
 
 	Prints an error message to the console. These are fatal errors that require immediate action.
 ]]--
-function GST.Error(message)
-	_logWithPrefix("[ERROR]", message)
+function GST.Error(message, ...)
+	_logWithPrefix("[ERROR]", message, ...)
 	
 	if CLIENT then
 		MsgN("[GST] Please contact a server administrator with the error above and any additional information!")
@@ -58,7 +58,8 @@ end
 
 		Sends a message to everyone. This is shared, but does nothing on the client.
 ]]--
-function GST.MessageAll(message)
+function GST.MessageAll(message, ...)
+	message = string.format(message, ...)
 	if ULib then
 		ULib.tsayColor(_, "", -- empty string is required because color doesn't always work right away
 			Color(255, 255, 255), "[", 
