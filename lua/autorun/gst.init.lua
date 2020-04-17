@@ -117,7 +117,7 @@ local function _init()
 	else
 		files = file.Find("gst/shared/sh_*.lua")
 		for _, fil in pairs(files) do
-			_includeSH("gst/shared/" .. fil)
+			include("gst/shared/" .. fil)
 			GST.Info(fil .. " loaded!")
 		end
 
