@@ -7,7 +7,7 @@ local function _registerDataValue(key, module, type, desc, displayname)
     type = type or GST.DataType.Int
     desc = desc or "No Description Set"
     displayname = displayname or key
-    local Q = GST.DataProvider:query(string.format(
+    local Q = GST.DataProvider.query(string.format(
 			[[
 				SELECT count(*) FROM information_schema.COLUMNS
 					WHERE COLUMN_NAME = '%s'
@@ -39,7 +39,7 @@ local function _registerWeaponDataValue(key, module, type, desc, displayname)
     local Q
 
     for _, wep in ipairs(weps) do
-        Q = GST.DataProvider:query(string.format([[IF NOT EXISTS (
+        Q = GST.DataProvider.query(string.format([[IF NOT EXISTS (
 											SELECT
 												*
 											FROM

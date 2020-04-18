@@ -11,7 +11,7 @@ GST.Modules = {} -- Used for shared storage.
 GST.Modules.__newindex = function(t, k, v)
 	if CLIENT then
 		-- client can only read, not modify
-		GST.PlayerMessage("Modules table is readonly.") -- PlayerMessage() uses "LocalPlayer()" as "ply" on client.
+		GST.MessagePlayer("Modules table is readonly.") -- PlayerMessage() uses "LocalPlayer()" as "ply" on client.
 	end
 end
 GST.Modules.__metatable = false

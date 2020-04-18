@@ -21,13 +21,14 @@ GST.Credits = {
 		qualitycont = {
 			Nick = "qualitycont",
 			Email = "noqualitycont@gmail.com"
+		},
+		Orion = {
+			Nick = "Orion"
 		}
 	},
 	Designers = {
 		Necro = {
-			Name = "?",
 			Nick = "Necro",
-			Email = "?"
 		}
 	},
 	Testers = {}
@@ -73,6 +74,16 @@ local function _init()
 
 	local files
 
+	GST.Module = {}
+	GST.Module.Name = ""
+	GST.Module.DisplayName = ""
+	GST.Module.Description = ""
+	GST.Module.Version = ""
+	GST.Module.Author = ""
+	GST.Module.Gamemode = ""
+	GST.Module.Enabled = true
+	GST.Module.Init = function() end
+
 	if SERVER then
 		files = file.Find("gst/server/sv_*.lua")
 		for _, fil in pairs(files) do
@@ -95,36 +106,20 @@ local function _init()
 		-- Modules
 		files = file.Find( "gst/modules/*.lua", "LUA" )
 		if #files > 0 then
-			for _, file in ipairs( files ) do
-				GST.Info( "Loading module: " .. file )
-
-				GST.Module = {}
-				GST.Module.Name = ""
-				GST.Module.DisplayName = ""
-				GST.Module.Description = ""
-				GST.Module.Version = ""
-				GST.Module.Author = ""
-				GST.Module.Gamemode = ""
-				GST.Module.Enabled = true
-				GST.Module.Init = function() end
-
-				include("gst/modules/" .. file)
-				if GST.Module.Gamemode and engine.ActiveGamemode() == GST.Module.Gamemode and GST.Module.Enabled then
-					GST.Module.Init()
-				end
+			for _, fil in ipairs( files ) do
+				_includeSH("gst/modules/" .. fil)
+				GST.Info(fil .. " loaded!")
 			end
 		end
 	else
 		files = file.Find("gst/shared/sh_*.lua")
 		for _, fil in pairs(files) do
 			include("gst/shared/" .. fil)
-			GST.Info(fil .. " loaded!")
 		end
 
 		files = file.Find("gst/client/cl_*.lua")
 		for _, fil in pairs(files) do
 			include("gst/client/" .. fil)
-			GST.Info(fil .. " loaded!")
 		end
 
 		-- Modules, but on client side
@@ -134,12 +129,14 @@ local function _init()
 				include("gst/modules/" .. file)
 			end
 		end
+	end
 
-		files = file.Find("gst/modules/cl/*.lua", "LUA")
-		if #files > 0 then
-			for _, file in ipairs(files) do
-				GST.Info("Loading CLIENT module: " .. file)
-				include("gst/modules/cl/" .. file)
+	for _, mod in ipairs(GST.Modules) do
+		if mod.Enabled then
+			if engine.ActiveGamemode() == mod.Gamemode then
+				mod.Init()
+			elseif v.Gamemode == "" then
+				mod.Init()
 			end
 		end
 	end

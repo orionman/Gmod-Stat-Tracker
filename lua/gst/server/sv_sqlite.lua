@@ -96,7 +96,20 @@ end
 -- Group: Data
 
 --[[
-	Function: MySQL.SetData
+	Function: SQLite.Query
+
+	Manually queries something, only intended for internal use.
+
+	Parameters:
+		
+		input - The query to execute
+]]--
+function s.Query(input)
+	sql.query(input)
+end
+
+--[[
+	Function: SQLite.SetData
 
 	Changes a players data value.
 
@@ -119,7 +132,7 @@ function s.SetData(ply, key, val)
 end
 
 --[[
-	Function: MySQL.GetData
+	Function: SQLite.GetData
 
 	Parameters:
 		
@@ -141,7 +154,7 @@ function s.GetData(ply)
 end
 
 --[[
-	Function: MySQL.SetWeaponData
+	Function: SQLite.SetWeaponData
 
 	Changes a players weapon data value.
 
@@ -171,7 +184,7 @@ end
 
 
 --[[
-	Function: MySQL.GetWeaponData
+	Function: SQLite.GetWeaponData
 
 	Parameters:
 		

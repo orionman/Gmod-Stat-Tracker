@@ -177,6 +177,25 @@ end
 -- Group: Data
 
 --[[
+	Function: MySQL.Query
+
+	Manually queries something, only intended for internal use.
+
+	Parameters:
+		
+		input - The query to execute
+]]--
+function m.Query(input)
+	local q = db:query(input)
+
+	q.onSuccess = _defaultCallback
+	q.onError = _defaultErrorCallback
+
+	q:start()
+end
+
+
+--[[
 	Function: MySQL.SetData
 
 	Changes a players data value.

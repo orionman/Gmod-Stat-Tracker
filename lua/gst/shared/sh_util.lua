@@ -88,7 +88,7 @@ function GST.MessagePlayer(ply, message, ...)
 			Color(255, 255, 255), "] ",
 			Color(199, 12, 37), message)
 	elseif SERVER then
-		net.Start("GST_MessageAll")
+		net.Start("GST_MessagePlayer")
 			net.WriteString(message)
 		net.Send(ply)
 	end
